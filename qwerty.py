@@ -115,22 +115,27 @@ def transcribe_audio(audio_files: list, output_dir: str = None, model_name="base
 
 
 def init_summarizer():
+    device = 0 if torch.cuda.is_available() else -1  # Use GPU if available, otherwise CPU
+    print(f"Using device: {'GPU' if device == 0 else 'CPU'}")  # Debug output to check device usage
+    
     try:
+        # Attempt to load the larger model
         return pipeline(
             "summarization",
             model="facebook/bart-large-cnn",
-            framework="pt",  # Explicitly specify PyTorch
-            device=0 if torch.cuda.is_available() else -1  # Use GPU if available
+            framework="pt",
+            device=device  # Pass the device here
         )
     except Exception as e:
-        print(f"Error initializing summarizer: {e}")
+        print(f"Error initializing summarizer with large model: {e}")
         # Fallback to a smaller model if the large one fails
         return pipeline(
             "summarization",
             model="facebook/bart-base",
             framework="pt",
-            device=0 if torch.cuda.is_available() else -1
+            device=device  # Ensure the same device is used
         )
+
 
 # Modified summarize function with simpler tokenizer handling
 def summarize(chunks: list[str], max_length: int = 150, min_length: int = 30) -> list:
@@ -224,6 +229,7 @@ def summarize_youtube_video(youtube_url: str, output_dir: str) -> tuple:
         return None, None
 
 def main():
+    print("="*100)
     youtube_url = input("Enter YouTube URL: ")
     outputs_dir = os.path.join(os.getcwd(), "youtube_summaries", 
                               f"summary_{time.strftime('%Y%m%d_%H%M%S')}")
